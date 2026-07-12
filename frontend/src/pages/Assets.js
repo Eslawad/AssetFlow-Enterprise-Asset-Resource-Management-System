@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +14,7 @@ export default function Assets() {
   const [filters, setFilters] = useState({ name:'', category:'', status:'' });
   const [page, setPage] = useState(0);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const canEdit = user?.role !== 'VIEWER';
 
   const load = () =>
@@ -90,6 +92,7 @@ export default function Assets() {
               <td style={styles.td}><span style={{...styles.badge, background: statusColor[a.status]}}>{a.status}</span></td>
               <td style={styles.td}>${a.purchasePrice}</td>
               <td style={styles.td}>
+                <button style={{...styles.btnSm, background:'#34a853'}} onClick={() => navigate(`/assets/${a.id}`)}>View</button>
                 {canEdit && <>
                   <button style={styles.btnSm} onClick={() => { setEditing(a.id); setForm({name:a.name,category:a.category,serialNumber:a.serialNumber,location:a.location,purchaseDate:a.purchaseDate||'',purchasePrice:a.purchasePrice||'',status:a.status}); }}>Edit</button>
                   {user?.role === 'ADMIN' && <button style={{...styles.btnSm, background:'#ea4335'}} onClick={() => del(a.id)}>Delete</button>}

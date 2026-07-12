@@ -12,6 +12,8 @@ import Reports from './pages/Reports';
 import Notifications from './pages/Notifications';
 import Users from './pages/Users';
 import AuditLog from './pages/AuditLog';
+import Profile from './pages/Profile';
+import AssetDetail from './pages/AssetDetail';
 
 function PrivateRoute({ children, roles }) {
   const { user } = useAuth();
@@ -36,6 +38,8 @@ function App() {
           <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
           <Route path="/users" element={<PrivateRoute roles={['ADMIN']}><Users /></PrivateRoute>} />
           <Route path="/audit" element={<PrivateRoute roles={['ADMIN','MANAGER']}><AuditLog /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+          <Route path="/assets/:id" element={<PrivateRoute><AssetDetail /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>

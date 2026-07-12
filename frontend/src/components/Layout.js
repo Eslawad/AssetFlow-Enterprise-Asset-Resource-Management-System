@@ -24,6 +24,7 @@ export default function Layout({ children }) {
     { to: '/notifications', label: `🔔 Alerts${unread > 0 ? ` (${unread})` : ''}` },
     { to: '/audit', label: '📋 Audit Log', roles: ['ADMIN','MANAGER'] },
     { to: '/users', label: '👥 Users', roles: ['ADMIN'] },
+    { to: '/profile', label: '👤 Profile' },
   ];
 
   return (
