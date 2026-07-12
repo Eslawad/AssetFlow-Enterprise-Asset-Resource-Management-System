@@ -6,67 +6,102 @@ export default function Allocations() {
   const [allocations, setAllocations] = useState([]);
   const [assets, setAssets] = useState([]);
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ assetId: '', userId: '' });
-  const [error, setError] = useState('');
+  const [form, setForm] = useState({ assetId:'', userId:'' });
 
   const load = () => api.get('/allocations').then(r => setAllocations(r.data));
   useEffect(() => {
     load();
-    api.get('/assets', { params: { size: 100 } }).then(r => setAssets(r.data.content.filter(a => a.status === 'AVAILABLE')));
+    api.get('/assets', { params:{ size:100 } }).then(r => setAssets(r.data.content.filter(a => a.status === 'AVAILABLE')));
     api.get('/users').then(r => setUsers(r.data));
   }, []);
 
   const submit = async e => {
-    e.preventDefault(); setError('');
-    try { await api.post('/allocations', { assetId: Number(form.assetId), userId: Number(form.userId) }); setForm({ assetId:'', userId:'' }); toast.success('Asset allocated'); load(); }
-    catch(err) { toast.error(err.response?.data?.message || 'Allocation failed'); }
+    e.preventDefault();
+    try {
+      await api.post('/allocations', { assetId: Number(form.assetId), userId: Number(form.userId) });
+      setForm({ assetId:'', userId:'' }); toast.success('Asset allocated'); load();
+    } catch(err) { toast.error(err.response?.data?.message || 'Allocation failed'); }
   };
 
   const returnAsset = async id => { await api.patch(`/allocations/${id}/return`); toast.success('Asset returned'); load(); };
 
   return (
-    <div style={styles.page}>
-      <h2>Asset Allocations</h2>
-      <form onSubmit={submit} style={styles.form}>
+    <div style={s.page}>
+      <div style={s.pageHeader}>
+        <div>
+          <h2 style={{margin:0}}>Asset Allocations</h2>
+          <p style={s.sub}>Assign assets to team members</p>
+        </div>
+      </div>
+
+      <div style={s.formCard}>
         <h4>Allocate Asset</h4>
-        <select style={styles.input} value={form.assetId} onChange={e => setForm({...form, assetId: e.target.value})} required>
-          <option value="">Select Asset</option>
-          {assets.map(a => <option key={a.id} value={a.id}>{a.name} ({a.serialNumber})</option>)}
-        </select>
-        <select style={styles.input} value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} required>
-          <option value="">Select User</option>
-          {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
-        </select>
-        {error && <p style={styles.error}>{error}</p>}
-        <button style={styles.btn} type="submit">Allocate</button>
-      </form>
-      <table style={styles.table}>
-        <thead><tr>{['Asset','User','Allocated Date','Returned Date','Status','Action'].map(h => <th key={h} style={styles.th}>{h}</th>)}</tr></thead>
-        <tbody>
-          {allocations.map(a => (
-            <tr key={a.id}>
-              <td style={styles.td}>{a.asset?.name}</td>
-              <td style={styles.td}>{a.user?.name}</td>
-              <td style={styles.td}>{a.allocatedDate}</td>
-              <td style={styles.td}>{a.returnedDate || '-'}</td>
-              <td style={styles.td}><span style={{...styles.badge, background: a.status === 'ACTIVE' ? '#fbbc04' : '#34a853'}}>{a.status}</span></td>
-              <td style={styles.td}>{a.status === 'ACTIVE' && <button style={styles.btnSm} onClick={() => returnAsset(a.id)}>Return</button>}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <form onSubmit={submit}>
+          <div style={s.formRow}>
+            <div style={{flex:1}}>
+              <label style={s.label}>Asset</label>
+              <select style={s.input} value={form.assetId} onChange={e => setForm({...form, assetId: e.target.value})} required>
+                <option value="">Select available asset…</option>
+                {assets.map(a => <option key={a.id} value={a.id}>{a.name} ({a.serialNumber})</option>)}
+              </select>
+            </div>
+            <div style={{flex:1}}>
+              <label style={s.label}>User</label>
+              <select style={s.input} value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} required>
+                <option value="">Select user…</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
+              </select>
+            </div>
+            <div style={{alignSelf:'flex-end'}}>
+              <button style={s.btnPrimary} type="submit">Allocate</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div style={s.tableWrap}>
+        <table style={s.table}>
+          <thead>
+            <tr>{['Asset','User','Allocated Date','Returned Date','Status','Action'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {allocations.length === 0 && <tr><td colSpan={6} style={{...s.td, textAlign:'center', color:'#94a3b8', padding:'2rem'}}>No allocations yet</td></tr>}
+            {allocations.map(a => (
+              <tr key={a.id}>
+                <td style={{...s.td, fontWeight:600}}>{a.asset?.name}</td>
+                <td style={s.td}>{a.user?.name}</td>
+                <td style={s.td}>{a.allocatedDate}</td>
+                <td style={s.td}>{a.returnedDate || '—'}</td>
+                <td style={s.td}>
+                  <span style={{...s.badge, ...(a.status==='ACTIVE' ? {background:'#fef9c3',color:'#a16207'} : {background:'#dcfce7',color:'#15803d'})}}>
+                    {a.status}
+                  </span>
+                </td>
+                <td style={s.td}>
+                  {a.status === 'ACTIVE' && <button style={{...s.btnSm, background:'#10b981'}} onClick={() => returnAsset(a.id)}>Return</button>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
-const styles = {
-  page:{padding:'1.5rem'}, form:{background:'#fff',padding:'1.25rem',borderRadius:'8px',boxShadow:'0 1px 4px rgba(0,0,0,0.1)',marginBottom:'1.5rem',maxWidth:'500px'},
-  input:{display:'block',width:'100%',padding:'0.6rem',marginBottom:'0.75rem',border:'1px solid #ddd',borderRadius:'4px',boxSizing:'border-box'},
-  btn:{padding:'0.6rem 1.25rem',background:'#1a73e8',color:'#fff',border:'none',borderRadius:'4px',cursor:'pointer'},
-  btnSm:{padding:'0.3rem 0.75rem',background:'#34a853',color:'#fff',border:'none',borderRadius:'4px',cursor:'pointer'},
-  table:{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:'8px',overflow:'hidden',boxShadow:'0 1px 4px rgba(0,0,0,0.1)'},
-  th:{padding:'0.75rem 1rem',background:'#f8f9fa',textAlign:'left',borderBottom:'1px solid #eee'},
-  td:{padding:'0.75rem 1rem',borderBottom:'1px solid #eee'},
-  badge:{padding:'0.25rem 0.6rem',borderRadius:'12px',color:'#fff',fontSize:'0.75rem'},
-  error:{color:'red',fontSize:'0.875rem',marginBottom:'0.5rem'}
+const s = {
+  page: { padding:'2rem' },
+  pageHeader: { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'1.5rem' },
+  sub: { color:'#64748b', fontSize:'0.875rem', margin:'0.25rem 0 0' },
+  formCard: { background:'var(--surface)', padding:'1.5rem', borderRadius:'14px', boxShadow:'var(--shadow)', marginBottom:'1.5rem' },
+  formRow: { display:'flex', gap:'1rem', flexWrap:'wrap', alignItems:'flex-start' },
+  label: { display:'block', fontSize:'0.75rem', fontWeight:600, color:'var(--text2)', marginBottom:'0.35rem', textTransform:'uppercase', letterSpacing:'0.04em' },
+  input: { width:'100%', padding:'0.65rem 0.9rem', border:'1.5px solid var(--border)', borderRadius:'8px', boxSizing:'border-box', fontSize:'0.875rem', background:'var(--input-bg)', color:'var(--text)' },
+  tableWrap: { background:'var(--surface)', borderRadius:'14px', boxShadow:'var(--shadow)', overflow:'hidden' },
+  table: { width:'100%', borderCollapse:'collapse' },
+  th: { padding:'0.85rem 1rem', background:'var(--surface2)', textAlign:'left', borderBottom:'2px solid var(--border)', fontSize:'0.75rem', fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.05em' },
+  td: { padding:'0.85rem 1rem', borderBottom:'1px solid var(--border2)', fontSize:'0.875rem', color:'var(--text2)' },
+  badge: { padding:'0.3rem 0.7rem', borderRadius:'20px', fontSize:'0.72rem', fontWeight:600 },
+  btnPrimary: { padding:'0.65rem 1.25rem', background:'linear-gradient(135deg,#4338ca,#6366f1)', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', fontSize:'0.875rem', fontWeight:600, whiteSpace:'nowrap' },
+  btnSm: { padding:'0.35rem 0.75rem', color:'#fff', border:'none', borderRadius:'6px', cursor:'pointer', fontSize:'0.78rem', fontWeight:500 },
 };
